@@ -1,12 +1,13 @@
 /**
-Class injects plugin preferences into AndroidManifest.xml file.
-*/
+ Class injects plugin preferences into AndroidManifest.xml file.
+ */
 
 var path = require('path');
 var xmlHelper = require('../xmlHelper.js');
+var fs = require('fs');
 
 module.exports = {
-  writePreferences: writePreferences
+    writePreferences: writePreferences
 };
 
 // region Public API
@@ -18,19 +19,22 @@ module.exports = {
  * @param {Object} pluginPreferences - plugin preferences as JSON object; already parsed
  */
 function writePreferences(cordovaContext, pluginPreferences) {
-  var pathToManifest = path.join(cordovaContext.opts.projectRoot, 'platforms', 'android', 'AndroidManifest.xml');
-  var manifestSource = xmlHelper.readXmlAsJson(pathToManifest);
-  var cleanManifest;
-  var updatedManifest;
+    var pathToManifest = path.join(cordovaContext.opts.projectRoot, 'platforms', 'android', 'AndroidManifest.xml');
+    if (!fs.existsSync(pathToManifest)) {
+        pathToManifest = path.join(cordovaContext.opts.projectRoot, 'platforms', 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+    }
+    var manifestSource = xmlHelper.readXmlAsJson(pathToManifest);
+    var cleanManifest;
+    var updatedManifest;
 
-  // remove old intent-filters
-  cleanManifest = removeOldOptions(manifestSource);
+    // remove old intent-filters
+    cleanManifest = removeOldOptions(manifestSource);
 
-  // inject intent-filters based on plugin preferences
-  updatedManifest = injectOptions(cleanManifest, pluginPreferences);
+    // inject intent-filters based on plugin preferences
+    updatedManifest = injectOptions(cleanManifest, pluginPreferences);
 
-  // save new version of the AndroidManifest
-  xmlHelper.writeJsonAsXml(updatedManifest, pathToManifest);
+    // save new version of the AndroidManifest
+    xmlHelper.writeJsonAsXml(updatedManifest, pathToManifest);
 }
 
 // endregion
@@ -44,13 +48,13 @@ function writePreferences(cordovaContext, pluginPreferences) {
  * @return {Object} manifest data without old intent-filters
  */
 function removeOldOptions(manifestData) {
-  var cleanManifest = manifestData;
-  var activities = manifestData['manifest']['application'][0]['activity'];
+    var cleanManifest = manifestData;
+    var activities = manifestData['manifest']['application'][0]['activity'];
 
-  activities.forEach(removeIntentFiltersFromActivity);
-  cleanManifest['manifest']['application'][0]['activity'] = activities;
+    activities.forEach(removeIntentFiltersFromActivity);
+    cleanManifest['manifest']['application'][0]['activity'] = activities;
 
-  return cleanManifest;
+    return cleanManifest;
 }
 
 /**
@@ -60,20 +64,20 @@ function removeOldOptions(manifestData) {
  *                            Changes applied to the passed object.
  */
 function removeIntentFiltersFromActivity(activity) {
-  var oldIntentFilters = activity['intent-filter'];
-  var newIntentFilters = [];
+    var oldIntentFilters = activity['intent-filter'];
+    var newIntentFilters = [];
 
-  if (oldIntentFilters == null || oldIntentFilters.length == 0) {
-    return;
-  }
-
-  oldIntentFilters.forEach(function(intentFilter) {
-    if (!isIntentFilterForUniversalLinks(intentFilter)) {
-      newIntentFilters.push(intentFilter);
+    if (oldIntentFilters == null || oldIntentFilters.length == 0) {
+        return;
     }
-  });
 
-  activity['intent-filter'] = newIntentFilters;
+    oldIntentFilters.forEach(function(intentFilter) {
+        if (!isIntentFilterForUniversalLinks(intentFilter)) {
+            newIntentFilters.push(intentFilter);
+        }
+    });
+
+    activity['intent-filter'] = newIntentFilters;
 }
 
 /**
@@ -83,13 +87,13 @@ function removeIntentFiltersFromActivity(activity) {
  * @return {Boolean} true - if intent-filter for Universal Links; otherwise - false;
  */
 function isIntentFilterForUniversalLinks(intentFilter) {
-  var actions = intentFilter['action'];
-  var categories = intentFilter['category'];
-  var data = intentFilter['data'];
+    var actions = intentFilter['action'];
+    var categories = intentFilter['category'];
+    var data = intentFilter['data'];
 
-  return isActionForUniversalLinks(actions) &&
-    isCategoriesForUniversalLinks(categories) &&
-    isDataTagForUniversalLinks(data);
+    return isActionForUniversalLinks(actions) &&
+        isCategoriesForUniversalLinks(categories) &&
+        isDataTagForUniversalLinks(data);
 }
 
 /**
@@ -99,14 +103,14 @@ function isIntentFilterForUniversalLinks(intentFilter) {
  * @return {Boolean} true - if action for Universal Links; otherwise - false
  */
 function isActionForUniversalLinks(actions) {
-  // there can be only 1 action
-  if (actions == null || actions.length != 1) {
-    return false;
-  }
+    // there can be only 1 action
+    if (actions == null || actions.length != 1) {
+        return false;
+    }
 
-  var action = actions[0]['$']['android:name'];
+    var action = actions[0]['$']['android:name'];
 
-  return ('android.intent.action.VIEW' === action);
+    return ('android.intent.action.VIEW' === action);
 }
 
 /**
@@ -116,27 +120,27 @@ function isActionForUniversalLinks(actions) {
  * @return {Boolean} true - if action for Universal Links; otherwise - false
  */
 function isCategoriesForUniversalLinks(categories) {
-  // there can be only 2 categories
-  if (categories == null || categories.length != 2) {
-    return false;
-  }
-
-  var isBrowsable = false;
-  var isDefault = false;
-
-  // check intent categories
-  categories.forEach(function(category) {
-    var categoryName = category['$']['android:name'];
-    if (!isBrowsable) {
-      isBrowsable = 'android.intent.category.BROWSABLE' === categoryName;
+    // there can be only 2 categories
+    if (categories == null || categories.length != 2) {
+        return false;
     }
 
-    if (!isDefault) {
-      isDefault = 'android.intent.category.DEFAULT' === categoryName;
-    }
-  });
+    var isBrowsable = false;
+    var isDefault = false;
 
-  return isDefault && isBrowsable;
+    // check intent categories
+    categories.forEach(function(category) {
+        var categoryName = category['$']['android:name'];
+        if (!isBrowsable) {
+            isBrowsable = 'android.intent.category.BROWSABLE' === categoryName;
+        }
+
+        if (!isDefault) {
+            isDefault = 'android.intent.category.DEFAULT' === categoryName;
+        }
+    });
+
+    return isDefault && isBrowsable;
 }
 
 /**
@@ -146,17 +150,17 @@ function isCategoriesForUniversalLinks(categories) {
  * @return {Boolean} true - if data tag for Universal Links; otherwise - false
  */
 function isDataTagForUniversalLinks(data) {
-  // can have only 1 data tag in the intent-filter
-  if (data == null || data.length != 1) {
-    return false;
-  }
+    // can have only 1 data tag in the intent-filter
+    if (data == null || data.length != 1) {
+        return false;
+    }
 
-  var dataHost = data[0]['$']['android:host'];
-  var dataScheme = data[0]['$']['android:scheme'];
-  var hostIsSet = dataHost != null && dataHost.length > 0;
-  var schemeIsSet = dataScheme != null && dataScheme.length > 0;
+    var dataHost = data[0]['$']['android:host'];
+    var dataScheme = data[0]['$']['android:scheme'];
+    var hostIsSet = dataHost != null && dataHost.length > 0;
+    var schemeIsSet = dataScheme != null && dataScheme.length > 0;
 
-  return hostIsSet && schemeIsSet;
+    return hostIsSet && schemeIsSet;
 }
 
 // endregion
@@ -171,31 +175,31 @@ function isDataTagForUniversalLinks(data) {
  * @return {Object} updated manifest data with corresponding intent-filters
  */
 function injectOptions(manifestData, pluginPreferences) {
-  var changedManifest = manifestData;
-  var activitiesList = changedManifest['manifest']['application'][0]['activity'];
-  var launchActivityIndex = getMainLaunchActivityIndex(activitiesList);
-  var ulIntentFilters = [];
-  var launchActivity;
+    var changedManifest = manifestData;
+    var activitiesList = changedManifest['manifest']['application'][0]['activity'];
+    var launchActivityIndex = getMainLaunchActivityIndex(activitiesList);
+    var ulIntentFilters = [];
+    var launchActivity;
 
-  if (launchActivityIndex < 0) {
-    console.warn('Could not find launch activity in the AndroidManifest file. Can\'t inject Universal Links preferences.');
-    return;
-  }
+    if (launchActivityIndex < 0) {
+        console.warn('Could not find launch activity in the AndroidManifest file. Can\'t inject Universal Links preferences.');
+        return;
+    }
 
-  // get launch activity
-  launchActivity = activitiesList[launchActivityIndex];
+    // get launch activity
+    launchActivity = activitiesList[launchActivityIndex];
 
-  // generate intent-filters
-  pluginPreferences.hosts.forEach(function(host) {
-    host.paths.forEach(function(hostPath) {
-      ulIntentFilters.push(createIntentFilter(host.name, host.scheme, hostPath));
+    // generate intent-filters
+    pluginPreferences.hosts.forEach(function(host) {
+        host.paths.forEach(function(hostPath) {
+            ulIntentFilters.push(createIntentFilter(host.name, host.scheme, hostPath));
+        });
     });
-  });
 
-  // add Universal Links intent-filters to the launch activity
-  launchActivity['intent-filter'] = launchActivity['intent-filter'].concat(ulIntentFilters);
+    // add Universal Links intent-filters to the launch activity
+    launchActivity['intent-filter'] = launchActivity['intent-filter'].concat(ulIntentFilters);
 
-  return changedManifest;
+    return changedManifest;
 }
 
 /**
@@ -205,17 +209,17 @@ function injectOptions(manifestData, pluginPreferences) {
  * @return {Integer} index of the launch activity; -1 - if none was found
  */
 function getMainLaunchActivityIndex(activities) {
-  var launchActivityIndex = -1;
-  activities.some(function(activity, index) {
-    if (isLaunchActivity(activity)) {
-      launchActivityIndex = index;
-      return true;
-    }
+    var launchActivityIndex = -1;
+    activities.some(function(activity, index) {
+        if (isLaunchActivity(activity)) {
+            launchActivityIndex = index;
+            return true;
+        }
 
-    return false;
-  });
+        return false;
+    });
 
-  return launchActivityIndex;
+    return launchActivityIndex;
 }
 
 /**
@@ -225,28 +229,28 @@ function getMainLaunchActivityIndex(activities) {
  * @return {Boolean} true - if this is a launch activity; otherwise - false
  */
 function isLaunchActivity(activity) {
-  var intentFilters = activity['intent-filter'];
-  var isLauncher = false;
+    var intentFilters = activity['intent-filter'];
+    var isLauncher = false;
 
-  if (intentFilters == null || intentFilters.length == 0) {
-    return false;
-  }
-
-  isLauncher = intentFilters.some(function(intentFilter) {
-    var action = intentFilter['action'];
-    var category = intentFilter['category'];
-
-    if (action == null || action.length != 1 || category == null || category.length != 1) {
-      return false;
+    if (intentFilters == null || intentFilters.length == 0) {
+        return false;
     }
 
-    var isMainAction = ('android.intent.action.MAIN' === action[0]['$']['android:name']);
-    var isLauncherCategory = ('android.intent.category.LAUNCHER' === category[0]['$']['android:name']);
+    isLauncher = intentFilters.some(function(intentFilter) {
+        var action = intentFilter['action'];
+        var category = intentFilter['category'];
 
-    return isMainAction && isLauncherCategory;
-  });
+        if (action == null || action.length != 1 || category == null || category.length != 1) {
+            return false;
+        }
 
-  return isLauncher;
+        var isMainAction = ('android.intent.action.MAIN' === action[0]['$']['android:name']);
+        var isLauncherCategory = ('android.intent.category.LAUNCHER' === category[0]['$']['android:name']);
+
+        return isMainAction && isLauncherCategory;
+    });
+
+    return isLauncher;
 }
 
 /**
@@ -258,35 +262,35 @@ function isLaunchActivity(activity) {
  * @return {Object} intent-filter as a JSON object
  */
 function createIntentFilter(host, scheme, pathName) {
-  var intentFilter = {
-    '$': {
-      'android:autoVerify': 'true'
-    },
-    'action': [{
-      '$': {
-        'android:name': 'android.intent.action.VIEW'
-      }
-    }],
-    'category': [{
-      '$': {
-        'android:name': 'android.intent.category.DEFAULT'
-      }
-    }, {
-      '$': {
-        'android:name': 'android.intent.category.BROWSABLE'
-      }
-    }],
-    'data': [{
-      '$': {
-        'android:host': host,
-        'android:scheme': scheme
-      }
-    }]
-  };
+    var intentFilter = {
+        '$': {
+            'android:autoVerify': 'true'
+        },
+        'action': [{
+            '$': {
+                'android:name': 'android.intent.action.VIEW'
+            }
+        }],
+        'category': [{
+            '$': {
+                'android:name': 'android.intent.category.DEFAULT'
+            }
+        }, {
+            '$': {
+                'android:name': 'android.intent.category.BROWSABLE'
+            }
+        }],
+        'data': [{
+            '$': {
+                'android:host': host,
+                'android:scheme': scheme
+            }
+        }]
+    };
 
-  injectPathComponentIntoIntentFilter(intentFilter, pathName);
+    injectPathComponentIntoIntentFilter(intentFilter, pathName);
 
-  return intentFilter;
+    return intentFilter;
 }
 
 /**
@@ -296,21 +300,21 @@ function createIntentFilter(host, scheme, pathName) {
  * @param {String} pathName - host path to inject
  */
 function injectPathComponentIntoIntentFilter(intentFilter, pathName) {
-  if (pathName == null || pathName === '*') {
-    return;
-  }
+    if (pathName == null || pathName === '*') {
+        return;
+    }
 
-  var attrKey = 'android:path';
-  if (pathName.indexOf('*') >= 0) {
-    attrKey = 'android:pathPattern';
-    pathName = pathName.replace(/\*/g, '.*');
-  }
+    var attrKey = 'android:path';
+    if (pathName.indexOf('*') >= 0) {
+        attrKey = 'android:pathPattern';
+        pathName = pathName.replace(/\*/g, '.*');
+    }
 
-  if (pathName.indexOf('/') != 0) {
-    pathName = '/' + pathName;
-  }
+    if (pathName.indexOf('/') != 0) {
+        pathName = '/' + pathName;
+    }
 
-  intentFilter['data'][0]['$'][attrKey] = pathName;
+    intentFilter['data'][0]['$'][attrKey] = pathName;
 }
 
 // endregion
