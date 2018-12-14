@@ -1,14 +1,16 @@
-# THIS PROJECT IS A FORK
-
-Of the deprecated 'nordnet/cordova-universal-links-plugin' cordova plugin. This fork adds un-merged pull requests from the original and un-maintained project.
-
-Original repo with pull requests, forks and issues:
-https://github.com/nordnet/cordova-universal-links-plugin
-
 # Cordova Universal Links Plugin
 This Cordova plugin adds support for opening an application from the browser when user clicks on the link. Better known as:
 - [Universal Links on iOS](https://developer.apple.com/library/ios/documentation/General/Conceptual/AppSearch/UniversalLinks.html)
 - [Deep Linking on Android](https://developer.android.com/training/app-indexing/deep-linking.html)
+
+## This Project Is a Fork
+
+This repo is a fork of the deprecated 'nordnet/cordova-universal-links-plugin' cordova plugin. This fork adds un-merged pull requests from the original and un-maintained project.
+
+Original repo with pull requests, forks and issues:
+https://github.com/nordnet/cordova-universal-links-plugin
+
+## Getting Started
 
 Basically, you can have a single link that will either open your app or your website, if the app isn't installed.
 
