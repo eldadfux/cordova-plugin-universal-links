@@ -8,10 +8,10 @@
     Basically, open application through the link in the browser.
   </description>
   <license>MIT</license>
-  <keywords>cordova,links,universal</keywords>
+  <keywords>cordova,links,universal,deep</keywords>
 
-  <repo>https://github.com/nordnet/cordova-universal-links-plugin</repo>
-  <issue>https://github.com/nordnet/cordova-universal-links-plugin/issues</issue>
+  <repo>https://github.com/eldadfux/cordova-plugin-universal-links</repo>
+  <issue>https://github.com/eldadfux/cordova-plugin-universal-links/issues</issue>
 
   <engines>
     <engine name="cordova-ios" version=">=3.8"></engine>
